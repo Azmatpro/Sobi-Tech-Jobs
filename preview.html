@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobi Tech Jobs - Preview</title>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- React Router -->
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #f59e0b;
+            --background-color: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --white: #ffffff;
+            --border-radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --font-family: 'Inter', sans-serif;
+        }
+
+        body.dark-mode {
+            --primary-color: #3b82f6;
+            --secondary-color: #60a5fa;
+            --background-color: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .navbar {
+            background: var(--card-bg);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { HashRouter, Routes, Route, Link, useParams } = ReactRouterDOM;
+        const { useState } = React;
+
+        // --- COMPONENTS ---
+
+        const Navbar = ({ theme, toggleTheme }) => (
+            <nav className="navbar">
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>
+                    <Link to="/">Sobi Tech Jobs</Link>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                    <ul className="nav-links">
+                        <li><Link to="/jobs">Jobs</Link></li>
+                        <li><Link to="/preparation">Preparation</Link></li>
+                        <li><Link to="/hiring-process">Hiring Process</Link></li>
+                        <li><Link to="/oracle-exadata-sheet" style={{ color: '#f59e0b' }}>Oracle Exadata</Link></li>
+                    </ul>
+                    <button onClick={toggleTheme} style={{ background: 'transparent', border: '1px solid var(--border-color)', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem' }}>
+                        {theme === 'light' ? '🌙' : '☀️'}
+                    </button>
+                </div>
+            </nav>
+        );
+
+        const Footer = () => (
+            <footer style={{ background: '#1e293b', color: 'white', padding: '2rem', marginTop: 'auto', textAlign: 'center' }}>
+                <p>&copy; {new Date().getFullYear()} Sobi Tech Jobs. All rights reserved.</p>
+            </footer>
+        );
+
+        const LandingPage = () => (
+            <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Master Your Career Journey with Sobi Tech Jobs</h1>
+                <p style={{ fontSize: '1.2rem', color: '#64748b', marginBottom: '3rem' }}>One platform for Job Hunting, Preparation, and Interview Success.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+                    <div className="card">
+                        <h3>Find Jobs</h3>
+                        <p style={{ margin: '1rem 0' }}>Browse correct openings from top companies.</p>
+                        <Link to="/jobs" className="btn btn-primary">Browse Jobs</Link>
+                    </div>
+                    <div className="card">
+                        <h3>Prepare</h3>
+                        <p style={{ margin: '1rem 0' }}>Aptitude, Technical, and HR materials.</p>
+                        <Link to="/preparation" className="btn btn-primary">Start Learning</Link>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const JobList = () => {
+            const jobs = [
+                { id: 1, title: 'Software Engineer', company: 'TechCorp', location: 'San Francisco, CA', type: 'Full-time' },
+                { id: 2, title: 'Oracle DBA', company: 'DataSystems', location: 'Austin, TX', type: 'Contract' },
+            ];
+            return (
+                <div>
+                    <h2 style={{ marginBottom: '2rem' }}>Latest Job Openings</h2>
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        {jobs.map(job => (
+                            <div key={job.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3>{job.title}</h3>
+                                    <p style={{ color: '#64748b' }}>{job.company} • {job.location}</p>
+                                </div>
+                                <button className="btn btn-primary">View Details</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const PrepHome = () => (
+            <div>
+                <h1 style={{ marginBottom: '2rem' }}>Preparation Dashboard</h1>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                    <div className="card" style={{ borderTop: '4px solid #3b82f6' }}>
+                        <h3>Aptitude</h3>
+                        <p>Numerical and logical reasoning practice.</p>
+                        <Link to="/preparation/aptitude" className="btn btn-primary">Start</Link>
+                    </div>
+                    <div className="card" style={{ borderTop: '4px solid #f59e0b', background: '#fffbeb' }}>
+                        <h3>Oracle Exadata Admin</h3>
+                        <p>Dedicated preparation sheet.</p>
+                        <Link to="/oracle-exadata-sheet" className="btn btn-primary">View Sheet</Link>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const OracleTopicSheet = () => {
+            const [active, setActive] = useState('arch');
+            return (
+                <div style={{ display: 'flex', gap: '2rem' }}>
+                    <div className="card" style={{ width: '250px' }}>
+                        <h3>Topics</h3>
+                        <ul style={{ listStyle: 'none', marginTop: '1rem' }}>
+                            <li onClick={() => setActive('arch')} style={{ padding: '0.5rem', cursor: 'pointer', background: active === 'arch' ? '#eff6ff' : '' }}>Architecture</li>
+                            <li onClick={() => setActive('cmds')} style={{ padding: '0.5rem', cursor: 'pointer', background: active === 'cmds' ? '#eff6ff' : '' }}>Commands</li>
+                        </ul>
+                    </div>
+                    <div className="card" style={{ flex: 1 }}>
+                        {active === 'arch' && (
+                            <div>
+                                <h2>Exadata Architecture</h2>
+                                <ul><li>Database Machine Overview</li><li>Storage Server (Cells)</li></ul>
+                            </div>
+                        )}
+                        {active === 'cmds' && (
+                            <div>
+                                <h2>Essential Commands</h2>
+                                <ul><li>LIST CELL DETAIL</li><li>dcli -g group command</li></ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [theme, setTheme] = useState('light');
+            React.useEffect(() => { document.body.className = theme === 'dark' ? 'dark-mode' : ''; }, [theme]);
+            const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+            return (
+                <HashRouter>
+                    <div className="app-container">
+                        <Navbar theme={theme} toggleTheme={toggleTheme} />
+                        <main className="main-content">
+                            <Routes>
+                                <Route path="/" element={<LandingPage />} />
+                                <Route path="/jobs" element={<JobList />} />
+                                <Route path="/preparation" element={<PrepHome />} />
+                                <Route path="/oracle-exadata-sheet" element={<OracleTopicSheet />} />
+                                <Route path="*" element={<div>Page under construction in preview mode</div>} />
+                            </Routes>
+                        </main>
+                        <Footer />
+                    </div>
+                </HashRouter>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
