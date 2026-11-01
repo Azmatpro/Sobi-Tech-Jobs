@@ -1,0 +1,728 @@
+<title>Claude Mastery Week</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+  /* Concept: a lab notebook. The left rail is the course timeline, the main column holds one day at a time,
+     and quiz questions are index cards with a tab on top, like a Leitner box. */
+  :root {
+    --bg: #EEF3F5;
+    --surface: #FFFFFF;
+    --surface-2: #F4F8F9;
+    --ink: #0F1B24;
+    --ink-2: #44565F;
+    --line: #D3DDE2;
+    --accent: #0D6B66;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #DAEFEC;
+    --good: #17713F;
+    --good-soft: #DCF2E4;
+    --warn: #8F5200;
+    --warn-soft: #FFEFD0;
+    --bad: #A8231B;
+    --bad-soft: #FCE3E0;
+    --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B1418; --surface: #122027; --surface-2: #0F1B21; --ink: #E7EFF2; --ink-2: #A3B6BF; --line: #243740;
+      --accent: #53D6C9; --accent-ink: #04211E; --accent-soft: #12332F;
+      --good: #66D595; --good-soft: #12301F; --warn: #F5BA62; --warn-soft: #38280C; --bad: #FF9188; --bad-soft: #3D1815;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B1418; --surface: #122027; --surface-2: #0F1B21; --ink: #E7EFF2; --ink-2: #A3B6BF; --line: #243740;
+    --accent: #53D6C9; --accent-ink: #04211E; --accent-soft: #12332F;
+    --good: #66D595; --good-soft: #12301F; --warn: #F5BA62; --warn-soft: #38280C; --bad: #FF9188; --bad-soft: #3D1815;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 48px;
+  }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 700; }
+  h2 { font-size: 1.55rem; font-weight: 700; }
+  h3 { font-size: 1.1rem; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .masthead { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .eyebrow { font: 500 .78rem/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  .save { font: 400 .8rem/1.3 var(--font-mono); color: var(--ink-2); margin: 0; max-width: 34ch; }
+
+  .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .rail { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; }
+  .rail a { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 12px; border-radius: var(--radius); text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+  .rail a:hover { background: var(--surface); }
+  .rail a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .rail .sc { font: 500 .78rem var(--font-mono); color: var(--ink-2); white-space: nowrap; }
+  .rail .sc.ok { color: var(--good); }
+  .rail .sc.low { color: var(--warn); }
+  .rail .sep { font: 500 .72rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 14px 12px 4px; }
+  .main { min-width: 0; }
+  .main:focus { outline: none; }
+
+  section.block { margin: 0 0 32px; }
+  section.block > h2, section.block > h3.sec { margin-bottom: 12px; }
+  .hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin-bottom: 32px; }
+  .hero h2 { margin-bottom: 8px; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: .88rem; }
+  .mono { font-family: var(--font-mono); }
+
+  .btn { font: 600 .95rem var(--font-body); background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); border-radius: var(--radius); padding: 10px 16px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.danger { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+
+  input[type="text"], input[type="date"], textarea { font: inherit; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; width: 100%; }
+  input[type="date"] { width: auto; }
+  textarea { resize: vertical; }
+
+  .tag { display: inline-block; font: 500 .72rem/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .tag.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .tag.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 500 .74rem var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .ladder { display: grid; gap: 8px; }
+  .lrow { display: grid; grid-template-columns: 64px minmax(0, 1fr) 64px; align-items: center; gap: 12px; }
+  .lrow .lbl { font: 500 .8rem var(--font-mono); color: var(--ink-2); }
+  .lrow .val { font: 500 .85rem var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .track { position: relative; height: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 3px; }
+  .track .fill { height: 100%; background: var(--good); border-radius: 2px 0 0 2px; }
+  .track .fill.low { background: var(--warn); }
+  .track::after { content: ""; position: absolute; left: 80%; top: -4px; bottom: -4px; border-left: 2px dashed var(--ink-2); }
+
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin: 16px 0 20px; }
+  .tabs button { font: 500 .93rem var(--font-body); background: transparent; color: var(--ink-2); border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius) var(--radius) 0 0; padding: 9px 14px; cursor: pointer; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); border-color: var(--line); font-weight: 600; }
+  .tabs .mins { font: 400 .72rem var(--font-mono); color: var(--ink-2); margin-left: 4px; }
+
+  .callout { background: var(--accent-soft); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .callout h3 { margin-bottom: 6px; color: var(--accent); }
+  .callout p { margin: 0; }
+  ul.points { padding-left: 20px; margin: 0 0 16px; }
+  ul.points li { margin-bottom: 8px; }
+  ul.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+  .lab-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 14px; }
+  .lab-item label.chk { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .lab-item input[type="checkbox"] { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+  .verify { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; margin-top: 10px; padding-left: 32px; }
+
+  .qcard { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 20px 20px; margin-top: 14px; }
+  .qtab { position: absolute; top: -13px; left: 16px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .qtab .tag { background: var(--surface); }
+  .stem { margin: 0 0 16px; font-size: 1.15rem; }
+  .stem:focus { outline: none; }
+  fieldset.conf { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
+  fieldset.conf legend { font-weight: 500; padding: 0; margin-bottom: 8px; }
+  .scale { display: flex; gap: 8px; flex-wrap: wrap; }
+  .scale button { width: 44px; height: 44px; font: 500 1rem var(--font-mono); background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+  .scale button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opts { display: grid; gap: 8px; margin-bottom: 14px; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; text-align: left; font: inherit; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 14px; cursor: pointer; width: 100%; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; color: var(--ink); }
+  .opt .ltr { font: 500 .85rem var(--font-mono); color: var(--ink-2); flex: none; width: 1.2em; padding-top: 2px; }
+  .opt .txt { min-width: 0; overflow-wrap: anywhere; }
+  .opt.correct { background: var(--good-soft); border-color: var(--good); }
+  .opt.wrong { background: var(--bad-soft); border-color: var(--bad); }
+  .opt .mark { margin-left: auto; font: 500 .72rem var(--font-mono); letter-spacing: .04em; text-transform: uppercase; flex: none; }
+  .opt.correct .mark { color: var(--good); }
+  .opt.wrong .mark { color: var(--bad); }
+  .fb { border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; }
+  .fb.good { background: var(--good-soft); }
+  .fb.bad { background: var(--bad-soft); }
+  .model { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 12px 0; }
+  .dots { display: flex; gap: 4px; margin: 0 0 6px; }
+  .dots span { height: 4px; flex: 1; background: var(--line); border-radius: 2px; }
+  .dots span.on { background: var(--accent); }
+
+  .result { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin-top: 14px; }
+  .score { font: 700 3rem/1 var(--font-display); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .score span { font-size: 1.5rem; color: var(--ink-2); }
+  .miss { border-top: 1px solid var(--line); padding: 12px 0; }
+  .miss:first-child { border-top: 0; }
+  details.sum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+  details.sum pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 400 .82rem/1.5 var(--font-mono); margin: 12px 0 0; }
+  .toast { font: 500 .85rem var(--font-mono); color: var(--good); min-height: 1.4em; margin: 8px 0 0; }
+  .foot { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .85rem; color: var(--ink-2); }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .rail { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+    .rail a { flex: none; background: var(--surface); border-color: var(--line); gap: 8px; }
+    .rail .sep { display: none; }
+    .verify { grid-template-columns: minmax(0, 1fr); padding-left: 0; }
+    .lrow { grid-template-columns: 48px minmax(0, 1fr) 56px; gap: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Claude Mastery Week</p>
+      <h1>Seven days, sixty minutes a day</h1>
+    </div>
+    <p class="save" id="save" role="status"></p>
+  </header>
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Course map"></nav>
+    <main class="main" id="main" tabindex="-1"></main>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var C = /*__COURSE_DATA__*/null;
+  if (!C) { document.body.textContent = 'Course data missing. Run node masterclass/build.mjs.'; return; }
+
+  var PASS = C.meta.passMark;
+  var DAY = {}, QMAP = {};
+  C.days.forEach(function (d) { DAY[d.day] = d; d.questions.forEach(function (q) { QMAP[q.id] = { q: q, day: d.day }; }); });
+  var SESSIONS = C.meta.sessions;
+  var ROUTES = ['overview'].concat(C.days.map(function (d) { return 'day-' + d.day; }), ['exam'], SESSIONS.map(function (s) { return 'review-' + s.id; }));
+  var LS_KEY = 'claude-mastery-week:v1';
+  var LETTERS = 'ABCD';
+
+  var $main = document.getElementById('main');
+  var $rail = document.getElementById('rail');
+  var $save = document.getElementById('save');
+  document.getElementById('foot').textContent = 'Facts verified ' + C.meta.verified + ' against official Anthropic pages. Sources and open questions are in masterclass/FACT-CHECK.md in the repo.';
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function two(n) { return String(n).padStart(2, '0'); }
+  function fmtDate(d) { return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()); }
+  function parseDate(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2], 12, 0, 0); }
+  function today() { return fmtDate(new Date()); }
+  function addDays(s, n) { var d = parseDate(s); d.setDate(d.getDate() + n); return fmtDate(d); }
+  function diffDays(a, b) { return Math.round((parseDate(a) - parseDate(b)) / 86400000); }
+  function niceDate(s) { return parseDate(s).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function num(x) { return String(Math.round(x * 10) / 10); }
+  function pctText(x) { return Math.round(x * 100) + '%'; }
+
+  /* ---------- state and persistence ---------- */
+  function blank() { return { v: 1, startDate: null, lab: {}, labNotes: {}, attempts: [], reflect: {}, pretest: '', updatedAt: 0 }; }
+  var state = blank();
+  var ui = { tab: {}, confirmReset: false };
+  var run = null;
+  var focusSel = null;
+  var statusKey = 'local';
+  var STATUS_TEXT = {
+    local: 'Saved on this device only.',
+    connecting: 'Connecting to your account...',
+    synced: 'Saved to your account.',
+    saving: 'Saving...',
+    error: 'Could not reach your account. Progress is kept on this device.',
+    slow: 'Your account is slow to answer. Showing this device’s copy.'
+  };
+  function setStatus(k) { statusKey = k; $save.textContent = STATUS_TEXT[k] || ''; }
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (raw) { var s = JSON.parse(raw); if (s && s.v === 1) return Object.assign(blank(), s); }
+    } catch (e) { /* storage unavailable */ }
+    return null;
+  }
+  function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
+
+  var remote = { doc: null };
+  var saveTimer = null, writing = false, dirty = false;
+  function touch() {
+    state.updatedAt = Date.now();
+    if (state.attempts.length > 300) state.attempts = state.attempts.slice(-300);
+    saveLocal();
+    dirty = true;
+    scheduleRemote();
+  }
+  function scheduleRemote() {
+    if (!remote.doc) return;
+    clearTimeout(saveTimer);
+    setStatus('saving');
+    saveTimer = setTimeout(flush, 700);
+  }
+  function flush() {
+    if (writing || !remote.doc || !dirty) return;
+    writing = true; dirty = false;
+    var snap = JSON.parse(JSON.stringify(state));
+    remote.doc.set(snap).then(function () { writing = false; setStatus(dirty ? 'saving' : 'synced'); if (dirty) scheduleRemote(); },
+      function () { writing = false; setStatus('error'); });
+  }
+  function initRemote() {
+    if (!window.claude || typeof window.claude.use !== 'function') return;
+    Promise.all([window.claude.use('db'), window.claude.use('user')]).then(function (r) {
+      var db = r[0], user = r[1];
+      if (!db || !user) return null;
+      return user.id().then(function (id) {
+        if (!id) return null;
+        remote.doc = db.doc('progress/' + id);
+        setStatus('connecting');
+        var timer = setTimeout(function () { if (statusKey === 'connecting') setStatus('slow'); }, 10000);
+        remote.doc.onSnapshot(function (snap) {
+          var fresh = !snap.metadata.fromCache;
+          if (fresh) clearTimeout(timer);
+          var d = snap.exists ? snap.data() : null;
+          if (d && d.v === 1 && (d.updatedAt || 0) > (state.updatedAt || 0)) {
+            state = Object.assign(blank(), JSON.parse(JSON.stringify(d)));
+            saveLocal();
+            render();
+          } else if (fresh && state.updatedAt > 0 && (!d || (d.updatedAt || 0) < state.updatedAt)) {
+            dirty = true; scheduleRemote();
+          }
+          if (fresh && !dirty && !writing) setStatus('synced');
+        }, function () { clearTimeout(timer); setStatus('error'); });
+      });
+    }).catch(function () { /* stay on this device */ });
+  }
+
+  /* ---------- derived data ---------- */
+  function att(ref) { return state.attempts.filter(function (a) { return a.ref === ref; }); }
+  function last(ref) { var a = att(ref); return a.length ? a[a.length - 1] : null; }
+  function pct(a) { return a.max ? a.score / a.max : 0; }
+  function passed(a) { return !!a && pct(a) >= PASS - 1e-9; }
+  function labDone(n) { var a = state.lab[n] || []; return a.filter(Boolean).length; }
+  function repairIds() {
+    var latest = {};
+    state.attempts.forEach(function (a) { a.items.forEach(function (it) { latest[it.id] = it.s; }); });
+    return Object.keys(latest).filter(function (id) { return latest[id] < 1 && QMAP[id]; });
+  }
+  function warmCards(n) {
+    var from = [];
+    C.meta.warmupDaysBack.forEach(function (b) { var d = n - b; if (d >= 1 && from.indexOf(d) < 0) from.push(d); });
+    var base = [];
+    from.forEach(function (d) { DAY[d].questions.forEach(function (q) { if (q.warmup) base.push({ q: q, from: d }); }); });
+    var have = {}; base.forEach(function (c) { have[c.q.id] = 1; });
+    var extra = repairIds().filter(function (id) { return !have[id]; }).slice(0, 4).map(function (id) { return { q: QMAP[id].q, from: QMAP[id].day, repair: true }; });
+    return { from: from, cards: base.concat(extra), repairCount: extra.length };
+  }
+  function allWarm() {
+    var out = [];
+    C.days.forEach(function (d) { d.questions.forEach(function (q) { if (q.warmup) out.push({ q: q, from: d.day }); }); });
+    return out;
+  }
+  function masteryCards() { return C.mastery.map(function (id) { return { q: QMAP[id].q, from: QMAP[id].day }; }); }
+  function reviewCards(id) {
+    var s = SESSIONS.filter(function (x) { return x.id === id; })[0];
+    if (s.source === 'mastery') return shuffle(masteryCards());
+    var base = allWarm(), have = {}; base.forEach(function (c) { have[c.q.id] = 1; });
+    var extra = repairIds().filter(function (x) { return !have[x]; }).slice(0, 6).map(function (x) { return { q: QMAP[x].q, from: QMAP[x].day, repair: true }; });
+    return shuffle(base.concat(extra));
+  }
+  function summarize(a) {
+    var n = a.items.length, conf = 0, sureWrong = 0, unsureRight = 0, missed = [];
+    a.items.forEach(function (it) {
+      conf += it.c;
+      if (it.s < 1) missed.push(it.id);
+      if (it.c >= 4 && it.s === 0) sureWrong++;
+      if (it.c <= 2 && it.s === 1) unsureRight++;
+    });
+    return { n: n, avgConf: n ? conf / n : 0, sureWrong: sureWrong, unsureRight: unsureRight, missed: missed };
+  }
+  function nextUp() {
+    for (var i = 0; i < C.days.length; i++) { var d = C.days[i]; if (!last('d' + d.day)) return { route: 'day-' + d.day, title: 'Day ' + d.day + ': ' + d.title, sub: 'Lab ' + labDone(d.day) + ' of ' + d.lab.length + ' done. Quiz not taken yet.', cta: 'Open Day ' + d.day }; }
+    if (!last('exam')) return { route: 'exam', title: 'The 20-question mastery exam', sub: 'All seven days are done. This is your retention baseline for Day 30.', cta: 'Open the exam' };
+    for (var j = 0; j < SESSIONS.length; j++) { var s = SESSIONS[j]; if (!last(s.id)) return { route: 'review-' + s.id, title: s.label, sub: 'Your next spaced review.', cta: 'Open ' + s.label }; }
+    return null;
+  }
+
+  /* ---------- routing ---------- */
+  function route() { var h = (location.hash || '').slice(1); return ROUTES.indexOf(h) >= 0 ? h : 'overview'; }
+  window.addEventListener('hashchange', function () { run = null; ui.confirmReset = false; render(); window.scrollTo(0, 0); });
+
+  /* ---------- rail ---------- */
+  function railLink(r, label, ref) {
+    var a = ref ? last(ref) : null;
+    var sc = '', cls = '';
+    if (a) { sc = num(a.score) + '/' + a.max; cls = passed(a) ? 'ok' : 'low'; }
+    return '<a href="#' + r + '"' + (route() === r ? ' aria-current="page"' : '') + '><span>' + esc(label) + '</span><span class="sc ' + cls + '">' + sc + '</span></a>';
+  }
+  function renderRail() {
+    var h = railLink('overview', 'Overview', null) + '<div class="sep">Daily lessons</div>';
+    C.days.forEach(function (d) { h += railLink('day-' + d.day, 'Day ' + d.day, 'd' + d.day); });
+    h += '<div class="sep">Retention</div>' + railLink('exam', 'Mastery exam', 'exam');
+    SESSIONS.forEach(function (s) { h += railLink('review-' + s.id, s.label, s.id); });
+    $rail.innerHTML = h;
+  }
+
+  /* ---------- views ---------- */
+  function render() {
+    renderRail();
+    var r = route(), h;
+    if (r === 'overview') h = overviewHTML();
+    else if (r.indexOf('day-') === 0) h = dayHTML(+r.slice(4));
+    else if (r === 'exam') h = examHTML();
+    else h = reviewHTML(r.slice(7));
+    $main.innerHTML = h;
+    if (focusSel) { var el = $main.querySelector(focusSel); if (el) el.focus(); focusSel = null; }
+  }
+
+  function overviewHTML() {
+    if (run && run.ref === 'repair') return '<p><button type="button" class="btn ghost" data-act="run-exit">Back to overview</button></p>' + runnerHTML();
+    var start = state.startDate || today();
+    var nu = nextUp();
+    var h = '';
+
+    if (nu) {
+      h += '<section class="hero"><p class="eyebrow">Next up</p><h2>' + esc(nu.title) + '</h2><p class="muted">' + esc(nu.sub) + '</p><a class="btn" href="#' + nu.route + '">' + esc(nu.cta) + '</a></section>';
+    } else {
+      h += '<section class="hero"><p class="eyebrow">Course complete</p><h2>All sessions done</h2><p class="muted">Compare your Day 30 review with your Day 7 exam to see what stuck, then keep using what you built.</p></section>';
+    }
+
+    // schedule
+    var k = state.startDate ? diffDays(today(), state.startDate) : null;
+    var line = '';
+    if (state.startDate) {
+      if (k < 0) line = 'Day 1 starts in ' + (-k) + ' day' + (k === -1 ? '' : 's') + '.';
+      else if (k <= 6) line = 'The calendar says today is Day ' + (k + 1) + '.';
+      else line = 'The seven-day block ended on ' + niceDate(addDays(start, 6)) + '.';
+    } else line = 'Dates below count from today. Press Set Day 1 to lock them in.';
+    h += '<section class="block"><h2>Schedule</h2><div class="row" style="margin:12px 0"><label for="start-date">Day 1 date</label><input type="date" id="start-date" value="' + esc(start) + '"><button type="button" class="btn' + (state.startDate ? ' ghost' : '') + '" data-act="set-start">' + (state.startDate ? 'Change date' : 'Set Day 1') + '</button></div><p class="muted small">' + esc(line) + '</p>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Session</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+    C.days.forEach(function (d) {
+      var date = addDays(start, d.day - 1), a = last('d' + d.day), st;
+      if (a) st = '<span class="tag ' + (passed(a) ? 'good' : 'warn') + '">' + num(a.score) + '/' + a.max + '</span>';
+      else if (date === today()) st = '<span class="tag">Today</span>';
+      else st = '<span class="muted">' + (date < today() ? 'Open' : 'Upcoming') + '</span>';
+      h += '<tr><td><a href="#day-' + d.day + '">Day ' + d.day + '</a> ' + esc(d.title) + '</td><td>' + esc(niceDate(date)) + '</td><td>' + st + '</td></tr>';
+    });
+    var ex = last('exam');
+    h += '<tr><td><a href="#exam">Mastery exam</a> (20 questions)</td><td>' + esc(niceDate(addDays(start, 6))) + '</td><td>' + (ex ? '<span class="tag ' + (passed(ex) ? 'good' : 'warn') + '">' + num(ex.score) + '/' + ex.max + '</span>' : '<span class="muted">After Day 7 lab</span>') + '</td></tr>';
+    SESSIONS.forEach(function (s) {
+      var date = addDays(start, s.offsetDays), a = last(s.id), st;
+      if (a) st = '<span class="tag ' + (passed(a) ? 'good' : 'warn') + '">' + num(a.score) + '/' + a.max + '</span>';
+      else { var diff = diffDays(today(), date); st = diff > 0 ? '<span class="tag bad">Overdue ' + diff + ' day' + (diff === 1 ? '' : 's') + '</span>' : diff === 0 ? '<span class="tag">Due today</span>' : '<span class="muted">In ' + (-diff) + ' days</span>'; }
+      h += '<tr><td><a href="#review-' + s.id + '">' + esc(s.label) + '</a></td><td>' + esc(niceDate(date)) + '</td><td>' + st + '</td></tr>';
+    });
+    h += '</tbody></table></div></section>';
+
+    // ladder
+    var rows = C.days.map(function (d) { return ['Day ' + d.day, 'd' + d.day]; }).concat([['Exam', 'exam']], SESSIONS.map(function (s) { return [s.label.replace(' review', ''), s.id]; }));
+    h += '<section class="block"><h2>Scores against the pass mark</h2><p class="muted small">The dashed line is the ' + pctText(PASS) + ' pass mark. Reviews usually score lower than the daily quiz, and that is expected.</p><div class="ladder">';
+    rows.forEach(function (r) {
+      var a = last(r[1]);
+      h += '<div class="lrow"><span class="lbl">' + esc(r[0]) + '</span><div class="track"><div class="fill' + (a && !passed(a) ? ' low' : '') + '" style="width:' + (a ? Math.round(pct(a) * 100) : 0) + '%"></div></div><span class="val">' + (a ? pctText(pct(a)) : '--') + '</span></div>';
+    });
+    h += '</div></section>';
+
+    // calibration
+    var bins = [1, 2, 3, 4, 5].map(function () { return { n: 0, ok: 0 }; }), total = 0, sureWrong = 0;
+    state.attempts.forEach(function (a) { a.items.forEach(function (it) { var b = bins[it.c - 1]; if (b) { b.n++; b.ok += it.s; total++; if (it.c >= 4 && it.s === 0) sureWrong++; } }); });
+    h += '<section class="block"><h2>Confidence versus accuracy</h2>';
+    if (total < 10) h += '<p class="muted">Answer about ten questions and this table will show whether your confidence matches your results. You have answered ' + total + '.</p>';
+    else {
+      h += '<p class="muted small">A well-calibrated learner scores higher as confidence rises. Answers where you were sure (4 or 5) and wrong: <strong>' + sureWrong + '</strong>. Those are the most useful misses.</p><div class="table-wrap"><table><thead><tr><th>Confidence</th><th class="num">Answers</th><th class="num">Accuracy</th></tr></thead><tbody>';
+      bins.forEach(function (b, i) { h += '<tr><td>' + (i + 1) + (i === 0 ? ' (guessing)' : i === 4 ? ' (certain)' : '') + '</td><td class="num">' + b.n + '</td><td class="num">' + (b.n ? pctText(b.ok / b.n) : '--') + '</td></tr>'; });
+      h += '</tbody></table></div>';
+    }
+    h += '</section>';
+
+    // repair list
+    var rep = repairIds();
+    h += '<section class="block"><h2>Repair list</h2>';
+    if (!rep.length) h += '<p class="muted">Nothing to repair yet. Questions you miss appear here and come back in your warm-ups until you get them right.</p>';
+    else {
+      h += '<p class="muted small">' + rep.length + ' question' + (rep.length === 1 ? '' : 's') + ' to revisit.</p><ul class="points">';
+      rep.forEach(function (id) { h += '<li><span class="tag">Day ' + QMAP[id].day + '</span> ' + esc(QMAP[id].q.q) + '</li>'; });
+      h += '</ul><button type="button" class="btn" data-act="run-start" data-ref="repair" data-kind="repair">Practise the repair list</button>';
+    }
+    h += '</section>';
+
+    // summary
+    h += '<section class="block"><h2>Progress summary</h2><p class="muted small">Paste this into the Learner Checkpoints table in CLAUDE.md, or into a chat so Claude can update it.</p><div class="row"><button type="button" class="btn" data-act="copy-summary">Copy progress summary</button></div><p class="toast" id="toast" role="status"></p><details class="sum"><summary>Show the summary text</summary><pre id="sumtext">' + esc(summaryText()) + '</pre></details></section>';
+
+    // reset
+    h += '<section class="block"><h3 class="sec">Start over</h3>';
+    if (!ui.confirmReset) h += '<button type="button" class="btn ghost" data-act="reset-ask">Erase all progress</button>';
+    else h += '<p>This erases every score, checkbox and note, here and in your account.</p><div class="row"><button type="button" class="btn danger" data-act="reset-yes">Yes, erase everything</button><button type="button" class="btn ghost" data-act="reset-no">Cancel</button></div>';
+    h += '</section>';
+    return h;
+  }
+
+  var TABS = [['warmup', 'Warm-up', 10], ['learn', 'Learn', 15], ['lab', 'Lab', 25], ['quiz', 'Quiz', 10]];
+  function dayHTML(n) {
+    var d = DAY[n], tab = ui.tab[n] || 'warmup';
+    var steps = 'Step' + (d.steps.length > 1 ? 's ' : ' ') + d.steps.join(' and ') + ' of the infographic';
+    var h = '<p class="eyebrow">Day ' + n + ' of ' + C.days.length + ' &middot; ' + esc(steps) + '</p><h2>' + esc(d.title) + '</h2><p class="muted" style="margin-top:8px">' + esc(d.objective) + '</p>';
+    h += '<div class="tabs" role="tablist" aria-label="Day ' + n + ' sections">';
+    TABS.forEach(function (t) {
+      var done = t[0] === 'warmup' ? (n === 1 ? !!state.pretest.trim() : !!last('w' + n)) : t[0] === 'lab' ? labDone(n) === d.lab.length : t[0] === 'quiz' ? !!last('d' + n) : false;
+      h += '<button type="button" role="tab" id="tab-' + t[0] + '" aria-selected="' + (tab === t[0]) + '" data-act="tab" data-tab="' + t[0] + '">' + t[1] + '<span class="mins">' + t[2] + ' min' + (done ? ' &middot; done' : '') + '</span></button>';
+    });
+    h += '</div><div role="tabpanel" aria-labelledby="tab-' + tab + '">';
+    if (tab === 'warmup') h += warmupHTML(n);
+    else if (tab === 'learn') h += learnHTML(n);
+    else if (tab === 'lab') h += labHTML(n);
+    else h += quizTabHTML(n);
+    return h + '</div>';
+  }
+
+  function warmupHTML(n) {
+    if (n === 1) {
+      return '<p>Nothing to retrieve yet, so take two minutes for a pre-test. Write down everything you already believe about how Claude works: its modes, plans, plugins, connectors. Do not look anything up. You will compare this with what you know on Day 7.</p><label class="sr" for="pretest">What I believe about Claude today</label><textarea id="pretest" rows="7" placeholder="What I believe about Claude today...">' + esc(state.pretest) + '</textarea><p class="muted small" style="margin-top:8px">Saved as you type.</p>';
+    }
+    if (run && run.ref === 'w' + n) return runnerHTML();
+    var w = warmCards(n), a = last('w' + n);
+    var h = '<p>Retrieve first, look things up second. Today’s cards come from ' + w.from.map(function (x) { return 'Day ' + x; }).join(' and ') + ' (spaced ' + C.meta.warmupDaysBack.join(', ') + ' days back)' + (w.repairCount ? ', plus ' + w.repairCount + ' from your repair list' : '') + '. Answer from memory before you check.</p>';
+    if (a) h += resultHTML(a, { compact: true });
+    h += '<button type="button" class="btn" data-act="run-start" data-ref="w' + n + '" data-kind="warmup">' + (a ? 'Run the warm-up again' : 'Start the warm-up (' + w.cards.length + ' cards)') + '</button>';
+    return h;
+  }
+
+  function learnHTML(n) {
+    var d = DAY[n];
+    var h = '<div class="callout"><h3>' + esc(d.analogy.headline) + '</h3><p>' + esc(d.analogy.body) + '</p></div><h3 class="sec" style="margin-bottom:10px">Key points</h3><ul class="points">';
+    d.keyPoints.forEach(function (p) { h += '<li>' + esc(p) + '</li>'; });
+    h += '</ul>';
+    if (n === 7 && state.pretest.trim()) h += '<h3 class="sec" style="margin-bottom:10px">What you believed on Day 1</h3><div class="model">' + esc(state.pretest).replace(/\n/g, '<br>') + '</div><p class="muted small">What would you change now?</p>';
+    h += '<p class="muted small">The full lesson with templates, tables and sources is masterclass/day-0' + n + '.md in the repo.</p>';
+    return h;
+  }
+
+  function labHTML(n) {
+    var d = DAY[n], arr = state.lab[n] || [], done = labDone(n);
+    var h = '<p><strong>' + done + ' of ' + d.lab.length + '</strong> steps done. Items tagged <span class="tag warn">verify in app</span> could not be confirmed from official pages, so you are the tester. Write down what you see.</p><ul class="checks">';
+    d.lab.forEach(function (it, i) {
+      h += '<li class="lab-item"><label class="chk"><input type="checkbox" data-act="lab" data-i="' + i + '"' + (arr[i] ? ' checked' : '') + '><span>' + esc(it.text) + '</span></label>';
+      if (it.verify) h += '<div class="verify"><span class="tag warn">verify in app</span><span><label class="sr" for="vn-' + n + '-' + i + '">What did you see in your app?</label><input type="text" id="vn-' + n + '-' + i + '" data-note="' + n + '.' + i + '" value="' + esc(state.labNotes[n + '.' + i] || '') + '" placeholder="What did you see in your app?"></span></div>';
+      h += '</li>';
+    });
+    return h + '</ul>';
+  }
+
+  function quizTabHTML(n) {
+    if (run && run.ref === 'd' + n) return runnerHTML();
+    var d = DAY[n], a = last('d' + n);
+    if (!a) {
+      return '<p>' + d.questions.length + ' questions. Pass mark ' + Math.ceil(PASS * d.questions.length - 1e-9) + ' of ' + d.questions.length + '. Rate your confidence <strong>before</strong> you answer each one. That is what lets the page show you where your confidence and your accuracy disagree.</p><button type="button" class="btn" data-act="run-start" data-ref="d' + n + '" data-kind="quiz">Start the quiz</button>';
+    }
+    return resultHTML(a, { reflect: n, retake: { ref: 'd' + n, kind: 'quiz' } });
+  }
+
+  function examHTML() {
+    if (run && run.ref === 'exam') return '<p class="eyebrow">Mastery exam</p>' + runnerHTML();
+    var a = last('exam'), d30 = last('d30');
+    var h = '<p class="eyebrow">Day 7 &middot; Retention baseline</p><h2>Mastery exam</h2><p class="muted" style="margin-top:8px">Twenty multiple-choice questions from all seven days, about fifteen minutes. Take it after the Day 7 lab and before you look anything up. The same twenty return on Day 30, and the gap between the two scores is your retention.</p>';
+    if (a) { h += resultHTML(a, { retake: { ref: 'exam', kind: 'exam' } }); if (d30) h += '<p><strong>Retention check:</strong> exam ' + pctText(pct(a)) + ', Day 30 ' + pctText(pct(d30)) + '.</p>'; }
+    else h += '<button type="button" class="btn" data-act="run-start" data-ref="exam" data-kind="exam">Start the exam</button>';
+    return h;
+  }
+
+  function reviewHTML(id) {
+    var s = SESSIONS.filter(function (x) { return x.id === id; })[0];
+    if (!s) return overviewHTML();
+    if (run && run.ref === id) return '<p class="eyebrow">' + esc(s.label) + '</p>' + runnerHTML();
+    var start = state.startDate || today(), date = addDays(start, s.offsetDays), a = last(id), diff = diffDays(today(), date);
+    var when = diff > 0 ? 'It was due ' + diff + ' day' + (diff === 1 ? '' : 's') + ' ago.' : diff === 0 ? 'Due today.' : 'Due in ' + (-diff) + ' days.';
+    var n = s.source === 'mastery' ? 20 : allWarm().length;
+    var h = '<p class="eyebrow">Spaced review &middot; ' + esc(niceDate(date)) + '</p><h2>' + esc(s.label) + '</h2><p class="muted" style="margin-top:8px">' + esc(when) + ' ' + (s.source === 'mastery' ? 'The 20 exam questions again, in a new order.' : 'The ' + n + ' warm-up cards from Days 1 to 7, plus anything on your repair list.') + ' Expect it to feel harder than the daily quizzes. Spacing lowers practice scores and raises what you remember later.</p>';
+    if (s.id === 'd8') h += '<p><strong>Also today:</strong> open Scheduled and check whether your 8:00 digest ran. Write the result in the Day 7 lab.</p>';
+    if (a) h += resultHTML(a, { retake: { ref: id, kind: 'review' } });
+    else h += '<button type="button" class="btn" data-act="run-start" data-ref="' + id + '" data-kind="review">Start ' + esc(s.label.toLowerCase()) + '</button>';
+    return h;
+  }
+
+  /* ---------- runner ---------- */
+  function startRun(ref, kind) {
+    var cards;
+    if (ref.charAt(0) === 'd' && /^d\d$/.test(ref) && DAY[+ref.slice(1)]) { var n = +ref.slice(1); cards = DAY[n].questions.map(function (q) { return { q: q, from: n }; }); }
+    else if (/^w\d$/.test(ref)) cards = warmCards(+ref.slice(1)).cards;
+    else if (ref === 'exam') cards = shuffle(masteryCards());
+    else if (ref === 'repair') cards = shuffle(repairIds().map(function (id) { return { q: QMAP[id].q, from: QMAP[id].day, repair: true }; }));
+    else cards = reviewCards(ref);
+    if (!cards.length) return;
+    run = { ref: ref, kind: kind, i: 0, items: [], conf: null, picked: null, revealed: false, grade: null, item: null, draft: '', done: null,
+      cards: cards.map(function (c) { return { q: c.q, from: c.from, repair: !!c.repair, perm: c.q.options ? shuffle([0, 1, 2, 3]) : null }; }) };
+    focusSel = '.stem';
+    render();
+  }
+
+  function runnerHTML() {
+    var r = run;
+    if (r.done) {
+      var isDay = /^d\d$/.test(r.ref) && DAY[+r.ref.slice(1)];
+      return resultHTML(r.done, { retake: { ref: r.ref, kind: r.kind }, exitable: true, reflect: isDay ? +r.ref.slice(1) : 0 });
+    }
+    var card = r.cards[r.i], q = card.q, n = r.cards.length;
+    var h = '<div class="dots" aria-hidden="true">';
+    for (var i = 0; i < n; i++) h += '<span class="' + (i < r.i || (i === r.i && r.revealed && (q.options || r.grade !== null)) ? 'on' : '') + '"></span>';
+    h += '</div><p class="muted small mono" style="margin:0">Question ' + (r.i + 1) + ' of ' + n + '</p>';
+    h += '<div class="qcard"><div class="qtab"><span class="tag">' + esc(q.type) + '</span>' + (card.from ? '<span class="tag">Day ' + card.from + '</span>' : '') + (card.repair ? '<span class="tag warn">repair</span>' : '') + '</div>';
+    h += '<h3 class="stem" tabindex="-1">' + esc(q.q) + '</h3>';
+    h += '<fieldset class="conf"><legend>How sure are you before you answer? <span class="muted small">1 is guessing, 5 is certain.</span></legend><div class="scale" role="radiogroup" aria-label="Confidence from 1 to 5">';
+    for (var c = 1; c <= 5; c++) h += '<button type="button" role="radio" aria-checked="' + (r.conf === c) + '" data-act="conf" data-n="' + c + '"' + (r.revealed ? ' disabled' : '') + '>' + c + '</button>';
+    h += '</div></fieldset>';
+
+    if (q.options) {
+      h += '<div class="opts">';
+      card.perm.forEach(function (k, di) {
+        var cls = 'opt', mark = '';
+        if (r.revealed) { if (k === q.answer) { cls += ' correct'; mark = 'Correct answer'; } else if (di === r.picked) { cls += ' wrong'; mark = 'Your answer'; } }
+        h += '<button type="button" class="' + cls + '" data-act="pick" data-i="' + di + '"' + ((r.conf === null || r.revealed) ? ' disabled' : '') + '><span class="ltr">' + LETTERS[di] + '</span><span class="txt">' + esc(q.options[k]) + '</span>' + (mark ? '<span class="mark">' + mark + '</span>' : '') + '</button>';
+      });
+      h += '</div>';
+      if (r.conf === null) h += '<p class="muted small">Choose your confidence first. Then the options unlock.</p>';
+      if (r.revealed) { var ok = card.perm[r.picked] === q.answer; h += '<div class="fb ' + (ok ? 'good' : 'bad') + '" role="status"><strong>' + (ok ? 'Correct.' : 'Not quite.') + '</strong> ' + esc(q.why) + '</div>'; }
+    } else {
+      h += '<label class="sr" for="draft">Your answer</label><textarea id="draft" rows="5" placeholder="Write your answer in your own words first..."' + (r.revealed ? ' readonly' : '') + '>' + esc(r.draft) + '</textarea>';
+      if (!r.revealed) h += '<p style="margin-top:12px"><button type="button" class="btn" data-act="reveal"' + (r.conf === null ? ' disabled' : '') + '>Show the model answer</button></p>' + (r.conf === null ? '<p class="muted small">Choose your confidence first.</p>' : '');
+      else {
+        h += '<div class="model"><strong>Model answer.</strong> ' + esc(q.model) + '<p style="margin:10px 0 4px"><strong>Your answer should have:</strong></p><ul class="points" style="margin:0">' + q.rubric.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+        if (r.grade === null) h += '<p><strong>Grade yourself honestly.</strong></p><div class="row"><button type="button" class="btn ghost" data-act="grade" data-s="1">Got it</button><button type="button" class="btn ghost" data-act="grade" data-s="0.5">Partly</button><button type="button" class="btn ghost" data-act="grade" data-s="0">Missed</button></div>';
+        else h += '<p class="muted small">You graded this: ' + (r.grade === 1 ? 'Got it' : r.grade === 0.5 ? 'Partly' : 'Missed') + '.</p>';
+      }
+    }
+    var ready = q.options ? r.revealed : r.grade !== null;
+    if (ready) h += '<p style="margin-top:14px"><button type="button" class="btn" data-act="next">' + (r.i === n - 1 ? 'See result' : 'Next question') + '</button></p>';
+    return h + '</div>';
+  }
+
+  function finishRun() {
+    var items = run.items, score = items.reduce(function (a, b) { return a + b.s; }, 0);
+    var a = { ref: run.ref, kind: run.kind, ts: Date.now(), items: items, score: score, max: items.length };
+    state.attempts.push(a); touch();
+    run.done = a; focusSel = '.result h3'; render();
+  }
+
+  function resultHTML(a, o) {
+    o = o || {};
+    var s = summarize(a), p = pct(a), isDaily = a.kind === 'quiz';
+    var verdict = a.kind === 'warmup' ? '<span class="tag">' + num(a.score) + ' of ' + a.max + ' recalled</span>' : (passed(a) ? '<span class="tag good">At or above the ' + pctText(PASS) + ' pass mark</span>' : '<span class="tag warn">Below the ' + pctText(PASS) + ' pass mark</span>');
+    var h = '<div class="result"><h3 tabindex="-1" class="sr">Result</h3><div class="score">' + num(a.score) + '<span> / ' + a.max + '</span></div><p>' + verdict + ' <span class="muted small">' + pctText(p) + ' &middot; ' + esc(niceDate(fmtDate(new Date(a.ts)))) + '</span></p>';
+    h += '<p>Average confidence <strong>' + num(s.avgConf) + '</strong> out of 5.';
+    if (s.sureWrong) h += ' You were sure (4 or 5) and wrong on <strong>' + s.sureWrong + '</strong>. Those misses are the most valuable ones, so read them closely.';
+    else if (s.unsureRight) h += ' You got <strong>' + s.unsureRight + '</strong> right while unsure. You know more than you think.';
+    h += '</p>';
+    if (s.missed.length) {
+      h += '<h3 class="sec" style="margin:16px 0 4px">Missed or partly right</h3><p class="muted small">These are on your repair list and come back in your next warm-up.</p>';
+      s.missed.forEach(function (id) {
+        var q = QMAP[id].q;
+        h += '<div class="miss"><p style="margin:0 0 4px"><span class="tag">Day ' + QMAP[id].day + '</span> ' + esc(q.q) + '</p><p class="small" style="margin:0"><strong>' + (q.options ? 'Answer: ' + esc(q.options[q.answer]) : 'Model answer: ' + esc(q.model)) + '</strong></p>' + (q.options ? '<p class="small muted" style="margin:4px 0 0">' + esc(q.why) + '</p>' : '') + '</div>';
+      });
+    } else h += '<p>Nothing missed.</p>';
+    if (o.reflect) h += '<h3 class="sec" style="margin:18px 0 6px">Reflection</h3><label for="reflect" class="muted small">Which question were you most sure about and got wrong? What will you do differently tomorrow?</label><textarea id="reflect" data-day="' + o.reflect + '" rows="3" style="margin-top:6px">' + esc(state.reflect[o.reflect] || '') + '</textarea>';
+    h += '<div class="row" style="margin-top:16px">';
+    if (o.retake) h += '<button type="button" class="btn ghost" data-act="run-start" data-ref="' + o.retake.ref + '" data-kind="' + o.retake.kind + '">' + (isDaily ? 'Retake the quiz' : 'Run it again') + '</button>';
+    if (o.exitable) h += '<button type="button" class="btn ghost" data-act="run-exit">Close</button>';
+    return h + '</div></div>';
+  }
+
+  /* ---------- summary ---------- */
+  function summaryText() {
+    var L = ['Claude Mastery Week, progress on ' + today(), ''];
+    var map = [];
+    C.days.forEach(function (d) { map.push(['LC-D' + d.day, 'd' + d.day, 'Lab ' + labDone(d.day) + '/' + d.lab.length]); });
+    map.push(['LC-EXAM', 'exam', '']);
+    SESSIONS.forEach(function (s) { map.push(['LC-D' + (s.offsetDays + 1), s.id, '']); });
+    L.push('| ID | Date | Score | Avg confidence | Repair list (IDs) | Notes |', '|---|---|---|---|---|---|');
+    var any = false;
+    map.forEach(function (m) {
+      var a = last(m[1]); if (!a) return; any = true;
+      var s = summarize(a);
+      L.push('| ' + m[0] + ' | ' + fmtDate(new Date(a.ts)) + ' | ' + num(a.score) + '/' + a.max + ' | ' + num(s.avgConf) + ' | ' + (s.missed.join(', ') || 'none') + ' | ' + m[2] + ' |');
+    });
+    if (!any) L.push('| (no quizzes taken yet) | | | | | |');
+    L.push('', 'Current repair list: ' + (repairIds().join(', ') || 'none'));
+    var notes = [];
+    C.days.forEach(function (d) { d.lab.forEach(function (it, i) { var v = state.labNotes[d.day + '.' + i]; if (it.verify && v && v.trim()) notes.push('- Day ' + d.day + ', ' + it.text.slice(0, 70) + (it.text.length > 70 ? '...' : '') + ' => ' + v.trim()); }); });
+    if (notes.length) L.push('', 'Verify-in-app results:', notes.join('\n'));
+    return L.join('\n');
+  }
+  function flash(msg) { var t = document.getElementById('toast'); if (t) t.textContent = msg; }
+  function copySummary() {
+    var text = summaryText(), pre = document.getElementById('sumtext'), settled = false;
+    function fallback() {
+      if (settled) return; settled = true;
+      var det = $main.querySelector('details.sum'); if (det) det.open = true;
+      if (pre) { var rng = document.createRange(); rng.selectNodeContents(pre); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(rng); }
+      flash('Select and copy the text below.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { if (settled) return; settled = true; flash('Copied to the clipboard.'); }, fallback);
+      setTimeout(fallback, 2000); // some viewers never settle the clipboard promise
+    } else fallback();
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t || t.type === 'checkbox' || t.disabled) return;
+    var act = t.dataset.act;
+    if (act === 'tab') { ui.tab[+route().slice(4)] = t.dataset.tab; focusSel = '#tab-' + t.dataset.tab; render(); }
+    else if (act === 'set-start') {
+      var v = document.getElementById('start-date').value;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { state.startDate = v; touch(); render(); }
+    }
+    else if (act === 'run-start') startRun(t.dataset.ref, t.dataset.kind);
+    else if (act === 'run-exit') { run = null; render(); }
+    else if (act === 'conf') { run.conf = +t.dataset.n; focusSel = run.cards[run.i].q.options ? '.opt' : '#draft'; render(); }
+    else if (act === 'pick') {
+      var card = run.cards[run.i], di = +t.dataset.i, ok = card.perm[di] === card.q.answer;
+      run.picked = di; run.revealed = true; run.item = { id: card.q.id, s: ok ? 1 : 0, c: run.conf };
+      focusSel = '[data-act="next"]'; render();
+    }
+    else if (act === 'reveal') { run.revealed = true; focusSel = '[data-act="grade"]'; render(); }
+    else if (act === 'grade') {
+      var q = run.cards[run.i].q; run.grade = +t.dataset.s; run.item = { id: q.id, s: run.grade, c: run.conf };
+      focusSel = '[data-act="next"]'; render();
+    }
+    else if (act === 'next') {
+      run.items.push(run.item);
+      if (run.i === run.cards.length - 1) finishRun();
+      else { run.i++; run.conf = null; run.picked = null; run.revealed = false; run.grade = null; run.item = null; run.draft = ''; focusSel = '.stem'; render(); }
+    }
+    else if (act === 'copy-summary') copySummary();
+    else if (act === 'reset-ask') { ui.confirmReset = true; render(); }
+    else if (act === 'reset-no') { ui.confirmReset = false; render(); }
+    else if (act === 'reset-yes') { state = blank(); ui.confirmReset = false; run = null; touch(); render(); }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.matches && t.matches('input[data-act="lab"]')) {
+      var n = +route().slice(4), i = +t.dataset.i;
+      var arr = state.lab[n] || []; arr[i] = t.checked; for (var k = 0; k < arr.length; k++) arr[k] = !!arr[k];
+      state.lab[n] = arr; touch(); focusSel = 'input[data-act="lab"][data-i="' + i + '"]'; render();
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'pretest') { state.pretest = t.value; touch(); }
+    else if (t.id === 'reflect') { state.reflect[t.dataset.day] = t.value; touch(); }
+    else if (t.id === 'draft' && run) { run.draft = t.value; }
+    else if (t.dataset && t.dataset.note) { state.labNotes[t.dataset.note] = t.value; touch(); }
+  });
+
+  /* ---------- boot ---------- */
+  var local = loadLocal(); if (local) state = local;
+  setStatus('local');
+  render();
+  initRemote();
+})();
+</script>
