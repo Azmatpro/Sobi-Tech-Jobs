@@ -68,14 +68,15 @@ tr:last-child td{border-bottom:0}
 body.paperview .wrap{display:none}
 body.paperview #paper{display:block}
 .pbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.sheet{background:var(--paper);color:var(--ink);border:1px solid var(--line);padding:18px;font-family:var(--body)}
+.sheet{background:var(--paper);color:var(--ink);border:1px solid var(--line);padding:12px;font-family:var(--body)}
 .sheet h3{font:700 18px var(--display);margin:0;letter-spacing:.02em;text-transform:uppercase}
 .sheet .clinic{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
 .sheet .clinic div{min-width:0}
 .sheet .fields{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin-bottom:12px}
 .sheet .fields span{border-bottom:1px solid var(--ink);min-width:110px;display:inline-block;padding:0 6px;font-weight:600}
 .sheet table{min-width:0;table-layout:fixed}
-.sheet th,.sheet td{border:1px solid var(--ink);color:var(--ink);background:transparent;font-size:12px;padding:4px 6px;height:26px;overflow-wrap:anywhere}
+.sheet th,.sheet td{border:1px solid var(--ink);color:var(--ink);background:transparent;font-size:11px;padding:4px 3px;height:26px;overflow-wrap:anywhere}
+.sheet td:nth-child(-n+5),.sheet th{white-space:nowrap}
 .sheet th{text-transform:none;letter-spacing:0;font:600 12px var(--body);text-align:center}
 @media print{
   body{background:#fff;padding:0}
@@ -149,7 +150,7 @@ body.paperview #paper{display:block}
       <span class="note">Pastes into a message or email, one line per reading, oldest first.</span>
     </div>
     <textarea id="exportbox" readonly hidden aria-label="Text to copy"></textarea>
-    <p class="note" style="margin-top:12px">Saved only on this device and browser. Highlights are reminders to mention a reading to your doctor, not a diagnosis. For chest pain, fainting or severe shortness of breath, call 911.</p>
+    <p class="note" style="margin-top:12px"><span id="sync">Saved only on this device and browser.</span> Highlights are reminders to mention a reading to your doctor, not a diagnosis. For chest pain, fainting or severe shortness of breath, call 911.</p>
   </section>
 </div>
 
@@ -165,7 +166,7 @@ body.paperview #paper{display:block}
     </div>
     <div class="fields">First Name: <span id="pFn"></span> Last Name: <span id="pLn"></span> DOB: <span id="pDob"></span></div>
     <table>
-      <colgroup><col style="width:14%"><col style="width:12%"><col style="width:14%"><col style="width:13%"><col style="width:10%"><col></colgroup>
+      <colgroup><col style="width:17%"><col style="width:17%"><col style="width:16%"><col style="width:14%"><col style="width:11%"><col></colgroup>
       <thead><tr><th>Date</th><th>Time</th><th>Weight</th><th>BP</th><th>Pulse</th><th>Comments</th></tr></thead>
       <tbody id="pRows"></tbody>
     </table>
@@ -251,7 +252,7 @@ body.paperview #paper{display:block}
       weight:$("weight").value.trim(),sys:+$("sys").value||"",dia:+$("dia").value||"",pulse:+$("pulse").value||"",note:$("note").value.trim()};
     if(!e.weight&&!e.sys&&!e.pulse){toast("Enter at least a weight, BP or pulse.");return}
     if(editing){entries=entries.map(function(x){return x.id===editing?e:x})}else entries.push(e);
-    save(KEY,entries);resetForm();render();toast("Saved");
+    persist();resetForm();render();toast("Saved");
   });
   $("cancelBtn").onclick=function(){resetForm()};
 
@@ -259,7 +260,7 @@ body.paperview #paper{display:block}
     var b=ev.target.closest("button");if(!b)return;
     var id=b.getAttribute("data-edit")||b.getAttribute("data-del");
     if(b.hasAttribute("data-del")){
-      if(b.getAttribute("data-armed")){entries=entries.filter(function(x){return x.id!==id});save(KEY,entries);render()}
+      if(b.getAttribute("data-armed")){entries=entries.filter(function(x){return x.id!==id});persist();render()}
       else{b.setAttribute("data-armed","1");b.textContent="Sure?";setTimeout(function(){if(b.isConnected){b.removeAttribute("data-armed");b.textContent="Delete"}},3000)}
       return;
     }
@@ -289,18 +290,55 @@ body.paperview #paper{display:block}
     var list=sorted(), html="", n=Math.max(20,list.length);
     for(var i=0;i<n;i++){
       var e=list[i];
-      html+=e?"<tr><td>"+fmtDate(e.date)+"</td><td>"+fmtTime(e.time)+"</td><td>"+esc(weightTxt(e))+"</td><td>"+esc(bpTxt(e))+"</td><td>"+(e.pulse||"")+"</td><td>"+esc(e.note||"")+"</td></tr>":"<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
+      html+=e?"<tr><td>"+fmtDate(e.date).replace(/\/(\d{4})$/,function(m,y){return "/"+y.slice(2)})+"</td><td>"+fmtTime(e.time)+"</td><td>"+esc(weightTxt(e))+"</td><td>"+esc(bpTxt(e))+"</td><td>"+(e.pulse||"")+"</td><td>"+esc(e.note||"")+"</td></tr>":"<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
     }
     $("pRows").innerHTML=html;
   }
   $("paperBtn").onclick=function(){renderPaper();document.body.classList.add("paperview");window.scrollTo(0,0)};
   $("backBtn").onclick=function(){document.body.classList.remove("paperview");window.scrollTo(0,0)};
 
+  var cloudDoc=null, writing=false, dirty=false, pT;
+  function patient(){return {fn:$("fn").value,ln:$("ln").value,dob:$("dob").value}}
+  function persist(){save(KEY,entries);save(PKEY,patient());if(cloudDoc){dirty=true;flush()}}
+  async function flush(){
+    if(writing)return;writing=true;
+    try{while(dirty){dirty=false;await cloudDoc.set({entries:entries,patient:patient(),updated:Date.now()})}}
+    catch(e){$("sync").textContent="Could not save to your account; saved on this device only."}
+    writing=false;
+  }
+  function initCloud(){
+    if(!window.claude||!claude.use)return;
+    Promise.all([claude.use("user"),claude.use("db")]).then(async function(r){
+      var user=r[0],db=r[1];if(!user||!db)return;
+      var id=await user.id();if(!id)return;
+      var ref=db.doc("data/users/"+id+"/log"),first=true;
+      ref.onSnapshot(function(s){
+        if(s.metadata.fromCache&&!s.exists)return;
+        if(s.metadata.hasPendingWrites)return;
+        var d=s.exists?s.data():{entries:[],patient:{}};
+        var remote=Array.isArray(d.entries)?d.entries:[], pt=d.patient||{};
+        if(first){
+          first=false;cloudDoc=ref;
+          var seen={};remote.forEach(function(e){seen[e.id]=1});
+          var extra=entries.filter(function(e){return !seen[e.id]});
+          entries=remote.concat(extra);
+          if(!$("fn").value)$("fn").value=pt.fn||"";if(!$("ln").value)$("ln").value=pt.ln||"";if(!$("dob").value)$("dob").value=pt.dob||"";
+          if(extra.length||!s.exists){dirty=true;flush()}
+        }else{
+          entries=remote.slice();
+          if(document.activeElement.id!=="fn")$("fn").value=pt.fn||"";if(document.activeElement.id!=="ln")$("ln").value=pt.ln||"";if(document.activeElement.id!=="dob")$("dob").value=pt.dob||"";
+        }
+        save(KEY,entries);save(PKEY,patient());render();
+        $("sync").textContent="Saved to your account, so it also shows in your browser.";
+      },function(){});
+    }).catch(function(){});
+  }
+
   var p=load(PKEY,{});$("fn").value=p.fn||"";$("ln").value=p.ln||"";$("dob").value=p.dob||"";
-  function savePatient(){save(PKEY,{fn:$("fn").value,ln:$("ln").value,dob:$("dob").value})}
+  function savePatient(){save(PKEY,patient());clearTimeout(pT);pT=setTimeout(function(){if(cloudDoc){dirty=true;flush()}},800)}
   ["fn","ln","dob"].forEach(function(i){$(i).addEventListener("input",savePatient)});
 
   entries=load(KEY,[]);if(!Array.isArray(entries))entries=[];
-  resetForm();render();
+  resetForm();render();initCloud();
 })();
 </script>
