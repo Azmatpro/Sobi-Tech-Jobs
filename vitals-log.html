@@ -64,6 +64,9 @@ tr:last-child td{border-bottom:0}
 .note{font-size:12px;color:var(--muted)}
 #exportbox{width:100%;min-height:120px;font:12px/1.5 ui-monospace,Menlo,monospace;margin-top:10px}
 .toast{color:var(--ok);font-weight:600;font-size:14px}
+.tap{cursor:pointer}
+.tap:hover td{background:var(--field)}
+.delbtn{color:var(--heart);border-color:var(--heart)}
 #paper{display:none;max-width:760px;margin:0 auto}
 body.paperview .wrap{display:none}
 body.paperview #paper{display:block}
@@ -132,12 +135,14 @@ body.paperview #paper{display:block}
     <div class="row" style="margin-top:14px">
       <button class="btn" type="submit" id="saveBtn">Save reading</button>
       <button class="btn ghost" type="button" id="cancelBtn" hidden>Cancel edit</button>
+      <button class="btn ghost delbtn" type="button" id="delBtn" hidden>Delete reading</button>
       <span class="toast" id="toast" role="status"></span>
     </div>
   </form>
 
   <section class="card" aria-label="Log">
     <h2>Log <span id="count" class="sub"></span></h2>
+    <p class="note" style="margin:-6px 0 10px">Tap any row to edit it.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Date</th><th>Time</th><th>Weight</th><th>BP</th><th>Pulse</th><th>Comments</th><th></th></tr></thead>
@@ -151,6 +156,28 @@ body.paperview #paper{display:block}
     </div>
     <textarea id="exportbox" readonly hidden aria-label="Text to copy"></textarea>
     <p class="note" style="margin-top:12px"><span id="sync">Saved only on this device and browser.</span> Highlights are reminders to mention a reading to your doctor, not a diagnosis. For chest pain, fainting or severe shortness of breath, call 911.</p>
+  </section>
+  <section class="card" aria-label="Import">
+    <h2>Import readings</h2>
+    <p class="note" style="margin:-6px 0 10px">Bring in readings from another device or a paper printout. You check them before anything is added.</p>
+    <div class="seg" role="group" aria-label="Import source" style="margin-bottom:12px">
+      <button type="button" id="tText" aria-pressed="true">Paste text</button>
+      <button type="button" id="tPhoto" aria-pressed="false">Photo of a sheet</button>
+    </div>
+    <div id="impText">
+      <label>Text from another device<textarea id="impBox" rows="5" placeholder="Paste lines made by 'Copy for the doctor', for example:&#10;11/18/2026 | 4:28 PM | 182 lb | 132/75 | 72 | felt fine"></textarea></label>
+      <div class="row" style="margin-top:10px"><button class="btn small" type="button" id="impParse">Preview</button></div>
+    </div>
+    <div id="impPhoto" hidden>
+      <label>Photo of the filled-in paper sheet<input id="impFile" type="file" accept="image/*"></label>
+      <div class="row" style="margin-top:10px"><button class="btn small" type="button" id="impRead">Read the photo</button><span class="note" id="impStatus" role="status"></span></div>
+      <p class="note">Claude reads the photo. Handwriting can be misread, so check every row against your sheet.</p>
+    </div>
+    <div id="impPrev" hidden style="margin-top:14px">
+      <p class="note" id="impMsg"></p>
+      <div class="tablewrap"><table><thead><tr><th></th><th>Date</th><th>Time</th><th>Weight</th><th>BP</th><th>Pulse</th><th>Comments</th></tr></thead><tbody id="impRows"></tbody></table></div>
+      <div class="row" style="margin-top:10px"><button class="btn" type="button" id="impAdd">Add readings</button><button class="btn ghost" type="button" id="impCancel">Cancel</button></div>
+    </div>
   </section>
 </div>
 
@@ -214,7 +241,7 @@ body.paperview #paper{display:block}
     editing=null;
     $("date").value=todayStr();$("time").value=nowTime();
     ["weight","pulse","sys","dia","note"].forEach(function(i){$(i).value=""});
-    autoPeriod();$("formTitle").textContent="Add a reading";$("saveBtn").textContent="Save reading";$("cancelBtn").hidden=true;$("flag").hidden=true;
+    autoPeriod();$("formTitle").textContent="Add a reading";$("saveBtn").textContent="Save reading";$("cancelBtn").hidden=true;$("delBtn").hidden=true;$("flag").hidden=true;
   }
 
   function sorted(){return entries.slice().sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time)})}
@@ -227,7 +254,7 @@ body.paperview #paper{display:block}
     if(!list.length){rows.innerHTML='<tr><td colspan="7" class="empty">No readings yet. Add your first morning or evening reading above and it appears here, in the same columns as the paper sheet.</td></tr>'}
     else rows.innerHTML=list.map(function(e){
       var hi=flagsFor(e).length?" hi":"";
-      return "<tr><td>"+fmtDate(e.date)+'<span class="tag">'+e.period+"</span></td><td>"+fmtTime(e.time)+"</td><td>"+esc(weightTxt(e))+'</td><td class="'+hi.trim()+'">'+esc(bpTxt(e))+'</td><td class="'+hi.trim()+'">'+(e.pulse||"")+"</td><td>"+esc(e.note||"")+'</td><td class="acts"><button data-edit="'+e.id+'">Edit</button><button class="del" data-del="'+e.id+'">Delete</button></td></tr>';
+      return '<tr class="tap" data-id="'+e.id+'"><td>'+fmtDate(e.date)+'<span class="tag">'+e.period+"</span></td><td>"+fmtTime(e.time)+"</td><td>"+esc(weightTxt(e))+'</td><td class="'+hi.trim()+'">'+esc(bpTxt(e))+'</td><td class="'+hi.trim()+'">'+(e.pulse||"")+"</td><td>"+esc(e.note||"")+'</td><td class="acts"><button data-edit="'+e.id+'">Edit</button><button class="del" data-del="'+e.id+'">Delete</button></td></tr>';
     }).join("");
     $("count").textContent=list.length?"· "+list.length+(list.length===1?" reading":" readings"):"";
     var t=todayStr();
@@ -257,9 +284,10 @@ body.paperview #paper{display:block}
   $("cancelBtn").onclick=function(){resetForm()};
 
   $("rows").addEventListener("click",function(ev){
-    var b=ev.target.closest("button");if(!b)return;
-    var id=b.getAttribute("data-edit")||b.getAttribute("data-del");
-    if(b.hasAttribute("data-del")){
+    var b=ev.target.closest("button"),tr=ev.target.closest("tr[data-id]");
+    if(!b&&!tr)return;
+    var id=b?(b.getAttribute("data-edit")||b.getAttribute("data-del")):tr.getAttribute("data-id");
+    if(b&&b.hasAttribute("data-del")){
       if(b.getAttribute("data-armed")){entries=entries.filter(function(x){return x.id!==id});persist();render()}
       else{b.setAttribute("data-armed","1");b.textContent="Sure?";setTimeout(function(){if(b.isConnected){b.removeAttribute("data-armed");b.textContent="Delete"}},3000)}
       return;
@@ -267,7 +295,7 @@ body.paperview #paper{display:block}
     var e=entries.filter(function(x){return x.id===id})[0];if(!e)return;
     editing=id;setPeriod(e.period);setUnit(e.unit||"lb");
     $("date").value=e.date;$("time").value=e.time;$("weight").value=e.weight;$("sys").value=e.sys;$("dia").value=e.dia;$("pulse").value=e.pulse;$("note").value=e.note||"";
-    $("formTitle").textContent="Edit reading";$("saveBtn").textContent="Update reading";$("cancelBtn").hidden=false;showFlag();
+    $("formTitle").textContent="Edit reading";$("saveBtn").textContent="Update reading";$("cancelBtn").hidden=false;$("delBtn").hidden=false;showFlag();
     $("form").scrollIntoView({behavior:"smooth",block:"start"});
   });
 
@@ -296,6 +324,77 @@ body.paperview #paper{display:block}
   }
   $("paperBtn").onclick=function(){renderPaper();document.body.classList.add("paperview");window.scrollTo(0,0)};
   $("backBtn").onclick=function(){document.body.classList.remove("paperview");window.scrollTo(0,0)};
+
+  $("delBtn").onclick=function(){
+    var b=$("delBtn");
+    if(b.dataset.armed){var id=editing;entries=entries.filter(function(x){return x.id!==id});persist();resetForm();render();toast("Deleted")}
+    else{b.dataset.armed="1";b.textContent="Tap again to delete";setTimeout(function(){delete b.dataset.armed;b.textContent="Delete reading"},3000)}
+  };
+
+  /* ---- Import ---- */
+  var cand=[];
+  function parseDateStr(s){var m=/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s);if(m){var y=+m[3];if(y<100)y+=2000;return y+"-"+pad(+m[1])+"-"+pad(+m[2])}m=/(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?m[0]:""}
+  function parseTimeStr(s){var m=/(\d{1,2}):(\d{2})\s*([AaPp][Mm])?/.exec(s||"");if(!m)return "";var h=+m[1];if(m[3]){var pm=/p/i.test(m[3]);if(pm&&h<12)h+=12;if(!pm&&h===12)h=0}return pad(h)+":"+m[2]}
+  var seq=0;
+  function mk(date,time,weight,u,sys,dia,pulse,note){
+    time=time||"08:00";
+    return {id:String(Date.now())+"-"+(seq++),date:date,time:time,period:(+time.split(":")[0])<14?"AM":"PM",unit:u==="kg"?"kg":"lb",weight:weight===""||weight==null?"":String(weight),sys:+sys||"",dia:+dia||"",pulse:+pulse||"",note:String(note||"").trim()};
+  }
+  function parseLines(text){
+    var out=[],skipped=0;
+    text.split(/\r?\n/).forEach(function(line){
+      var date=parseDateStr(line);if(!date)return;
+      var parts=line.split(/\s*\|\s*|\t/);
+      if(parts.length<5){skipped++;return}
+      var wm=/([\d.]+)\s*(lbs?|kg)?/i.exec(parts[2]||""),bm=/(\d{2,3})\s*[\/\-]\s*(\d{2,3})/.exec(parts[3]||""),pm=/\d+/.exec(parts[4]||"");
+      out.push(mk(date,parseTimeStr(parts[1]),wm?wm[1]:"",wm&&wm[2]&&/kg/i.test(wm[2])?"kg":"lb",bm?bm[1]:"",bm?bm[2]:"",pm?pm[0]:"",parts.slice(5).join(" | ")));
+    });
+    return {list:out,skipped:skipped};
+  }
+  function ckey(e){return e.date+"|"+e.time+"|"+e.sys+"|"+e.dia+"|"+e.pulse}
+  function updAdd(){var n=cand.filter(function(c){return c.on}).length;$("impAdd").textContent="Add "+n+(n===1?" reading":" readings");$("impAdd").disabled=!n}
+  function showCand(list,msg){
+    cand=list;var have={};entries.forEach(function(e){have[ckey(e)]=1});
+    cand.forEach(function(c){c.dup=!!have[ckey(c)];c.on=!c.dup});
+    $("impPrev").hidden=false;$("impMsg").textContent=msg||"";
+    $("impRows").innerHTML=cand.length?cand.map(function(c,i){
+      return '<tr><td><input type="checkbox" data-i="'+i+'" aria-label="Include this reading"'+(c.on?" checked":"")+' style="width:auto"></td><td>'+fmtDate(c.date)+'</td><td>'+fmtTime(c.time)+'</td><td>'+esc(weightTxt(c))+'</td><td>'+esc(bpTxt(c))+'</td><td>'+(c.pulse||"")+'</td><td>'+esc(c.note)+(c.dup?' <span class="tag">already in log</span>':"")+'</td></tr>';
+    }).join(""):'<tr><td colspan="7" class="empty">No readings found.</td></tr>';
+    updAdd();
+  }
+  function impTab(photo){$("tText").setAttribute("aria-pressed",!photo);$("tPhoto").setAttribute("aria-pressed",photo);$("impText").hidden=photo;$("impPhoto").hidden=!photo}
+  $("tText").onclick=function(){impTab(false)};$("tPhoto").onclick=function(){impTab(true)};
+  $("impParse").onclick=function(){
+    var r=parseLines($("impBox").value);
+    showCand(r.list,r.list.length?"Found "+r.list.length+" reading"+(r.list.length===1?"":"s")+(r.skipped?" ("+r.skipped+" line"+(r.skipped===1?"":"s")+" skipped: use the 'Date | Time | Weight | BP | Pulse | Comments' format).":"."):"Nothing readable. Each line should look like: 11/18/2026 | 4:28 PM | 182 lb | 132/75 | 72 | note");
+  };
+  $("impRows").addEventListener("change",function(ev){var i=ev.target.getAttribute("data-i");if(i==null)return;cand[+i].on=ev.target.checked;updAdd()});
+  $("impCancel").onclick=function(){$("impPrev").hidden=true;cand=[]};
+  $("impAdd").onclick=function(){
+    var add=cand.filter(function(c){return c.on}).map(function(c){return {id:c.id,date:c.date,time:c.time,period:c.period,unit:c.unit,weight:c.weight,sys:c.sys,dia:c.dia,pulse:c.pulse,note:c.note}});
+    if(!add.length)return;
+    entries=entries.concat(add);persist();render();
+    $("impPrev").hidden=true;$("impBox").value="";cand=[];toast("Added "+add.length);
+  };
+  async function shrink(f){
+    try{var bmp=await createImageBitmap(f),s=Math.min(1,1800/Math.max(bmp.width,bmp.height)),c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+      return await new Promise(function(res){c.toBlob(function(b){res(b||f)},"image/jpeg",.9)})}catch(e){return f}
+  }
+  $("impRead").onclick=async function(){
+    var st=$("impStatus"),f=$("impFile").files[0];
+    if(!f){st.textContent="Choose a photo first.";return}
+    var sample=window.claude&&claude.use?await claude.use("sample"):null,lim=null;
+    if(sample){try{lim=await sample.limits()}catch(e){}}
+    if(!sample||!lim||!lim.images){st.textContent="Photo reading isn't available here. Use Paste text instead.";return}
+    st.textContent="Reading the sheet…";$("impRead").disabled=true;
+    try{
+      var img=await shrink(f);
+      var rows=await sample.json("This image is a photo of a clinic vitals log sheet (Heart & Vascular Specialists) with columns Date, Time, Weight, BP, Pulse, Comments, filled in by hand or printed. Read every filled-in row, top to bottom. Return ONLY a JSON array. Each item: {\"date\":\"M/D/YYYY\",\"time\":\"h:mm AM or PM, or empty string\",\"weight\":number or empty string,\"unit\":\"lb\" or \"kg\",\"sys\":number or empty string,\"dia\":number or empty string,\"pulse\":number or empty string,\"note\":\"comment text\"}. Skip empty rows. If a value is unreadable use an empty string; never guess digits. If a date has no year, use "+new Date().getFullYear()+".",{images:img,cache:false});
+      var list=(Array.isArray(rows)?rows:[]).map(function(r){var d=parseDateStr(String(r.date||""));return d?mk(d,parseTimeStr(String(r.time||"")),r.weight,r.unit,r.sys,r.dia,r.pulse,r.note):null}).filter(Boolean);
+      st.textContent="";showCand(list,list.length?"Read "+list.length+" row"+(list.length===1?"":"s")+" from the photo. Check each against your sheet before adding.":"No filled rows found. Try a clearer, straight-on photo.");
+    }catch(e){st.textContent=(e&&e.code==="rate_limited")?"Too many requests right now. Try again in a minute.":"Could not read the photo. Try again or use Paste text."}
+    $("impRead").disabled=false;
+  };
 
   var cloudDoc=null, writing=false, dirty=false, pT;
   function patient(){return {fn:$("fn").value,ln:$("ln").value,dob:$("dob").value}}

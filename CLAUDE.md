@@ -10,4 +10,5 @@ Digital version of the paper sheet: Date | Time | Weight | BP | Pulse | Comments
 - [x] 4. Verified with Playwright at 400px: saved AM/PM entries, reload persistence, today status slots, no horizontal overflow, no JS errors. (Print/CSV not included: the artifact frame blocks printing and downloads, so "Copy for the doctor" is used instead.)
 - [x] 6. Added "Paper view" (sheet layout, 20+ rows, print CSS, Back button); tested at 400px.
 - [x] 7. Sync: entries and patient info stored in per-user db (data/users/<id>/log) so in-app and browser views match; localStorage kept as fallback. Paper view columns tightened (short dates, no wrapping).
+- [x] 8. Tap-to-edit rows + Delete in edit form; Import card: paste text (Copy-for-doctor format) and photo of paper sheet (Claude reads image via sample capability), with preview and duplicate detection. Tested paste import, edit, delete locally; photo reading not testable outside the viewer.
 - [x] 5. Published: https://claude.ai/artifact/UK8XgvuDr545cLrQjaZk7g (private; share from the page's Share menu if needed).
