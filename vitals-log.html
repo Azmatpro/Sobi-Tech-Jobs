@@ -7,6 +7,7 @@
   --bg:#f3f6f9; --surface:#ffffff; --fg:#14213a; --muted:#5a6882; --line:#d5dde8;
   --accent:#1d3f72; --accent-fg:#ffffff; --heart:#c4344a;
   --ok:#17794b; --ok-bg:#e1f3ea; --warn:#9a5b00; --warn-bg:#fff0d6; --field:#f7f9fc;
+  --paper:#ffffff; --ink:#111827;
   --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -63,6 +64,25 @@ tr:last-child td{border-bottom:0}
 .note{font-size:12px;color:var(--muted)}
 #exportbox{width:100%;min-height:120px;font:12px/1.5 ui-monospace,Menlo,monospace;margin-top:10px}
 .toast{color:var(--ok);font-weight:600;font-size:14px}
+#paper{display:none;max-width:760px;margin:0 auto}
+body.paperview .wrap{display:none}
+body.paperview #paper{display:block}
+.pbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.sheet{background:var(--paper);color:var(--ink);border:1px solid var(--line);padding:18px;font-family:var(--body)}
+.sheet h3{font:700 18px var(--display);margin:0;letter-spacing:.02em;text-transform:uppercase}
+.sheet .clinic{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+.sheet .clinic div{min-width:0}
+.sheet .fields{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin-bottom:12px}
+.sheet .fields span{border-bottom:1px solid var(--ink);min-width:110px;display:inline-block;padding:0 6px;font-weight:600}
+.sheet table{min-width:0;table-layout:fixed}
+.sheet th,.sheet td{border:1px solid var(--ink);color:var(--ink);background:transparent;font-size:12px;padding:4px 6px;height:26px;overflow-wrap:anywhere}
+.sheet th{text-transform:none;letter-spacing:0;font:600 12px var(--body);text-align:center}
+@media print{
+  body{background:#fff;padding:0}
+  .wrap,.pbar{display:none!important}
+  #paper{display:block!important;max-width:none}
+  .sheet{border:0;padding:0}
+}
 @media (prefers-reduced-motion:no-preference){.slot{transition:background .2s}}
 </style>
 
@@ -125,11 +145,31 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="row" style="margin-top:12px">
       <button class="btn small" type="button" id="copyBtn">Copy for the doctor</button>
+      <button class="btn small ghost" type="button" id="paperBtn">Paper view</button>
       <span class="note">Pastes into a message or email, one line per reading, oldest first.</span>
     </div>
     <textarea id="exportbox" readonly hidden aria-label="Text to copy"></textarea>
     <p class="note" style="margin-top:12px">Saved only on this device and browser. Highlights are reminders to mention a reading to your doctor, not a diagnosis. For chest pain, fainting or severe shortness of breath, call 911.</p>
   </section>
+</div>
+
+<div id="paper" aria-label="Paper view">
+  <div class="pbar">
+    <button class="btn small ghost" type="button" id="backBtn">Back to log</button>
+    <span class="note">Take a screenshot of this sheet, or use your browser's print (Ctrl/Cmd+P).</span>
+  </div>
+  <div class="sheet">
+    <div class="clinic">
+      <div><h3>Heart &amp; Vascular Specialists</h3></div>
+      <div>Dr. Mohammad Alasaad, MD &amp; Dr. Usman Hashmi, MD<br>3051 Churchill Dr. Suite 220, Flower Mound, Texas 75022<br>Phone: 972-430-8555 · Fax: 972-430-8560</div>
+    </div>
+    <div class="fields">First Name: <span id="pFn"></span> Last Name: <span id="pLn"></span> DOB: <span id="pDob"></span></div>
+    <table>
+      <colgroup><col style="width:14%"><col style="width:12%"><col style="width:14%"><col style="width:13%"><col style="width:10%"><col></colgroup>
+      <thead><tr><th>Date</th><th>Time</th><th>Weight</th><th>BP</th><th>Pulse</th><th>Comments</th></tr></thead>
+      <tbody id="pRows"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -242,6 +282,19 @@ tr:last-child td{border-bottom:0}
     function fallback(){box.hidden=false;box.value=t;box.focus();box.select();toast("Select and copy the text below")}
     try{navigator.clipboard.writeText(t).then(function(){toast("Copied")},fallback)}catch(e){fallback()}
   };
+
+  function renderPaper(){
+    var pp=load(PKEY,{});
+    $("pFn").textContent=pp.fn||"";$("pLn").textContent=pp.ln||"";$("pDob").textContent=pp.dob?fmtDate(pp.dob):"";
+    var list=sorted(), html="", n=Math.max(20,list.length);
+    for(var i=0;i<n;i++){
+      var e=list[i];
+      html+=e?"<tr><td>"+fmtDate(e.date)+"</td><td>"+fmtTime(e.time)+"</td><td>"+esc(weightTxt(e))+"</td><td>"+esc(bpTxt(e))+"</td><td>"+(e.pulse||"")+"</td><td>"+esc(e.note||"")+"</td></tr>":"<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
+    }
+    $("pRows").innerHTML=html;
+  }
+  $("paperBtn").onclick=function(){renderPaper();document.body.classList.add("paperview");window.scrollTo(0,0)};
+  $("backBtn").onclick=function(){document.body.classList.remove("paperview");window.scrollTo(0,0)};
 
   var p=load(PKEY,{});$("fn").value=p.fn||"";$("ln").value=p.ln||"";$("dob").value=p.dob||"";
   function savePatient(){save(PKEY,{fn:$("fn").value,ln:$("ln").value,dob:$("dob").value})}
